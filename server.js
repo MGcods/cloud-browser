@@ -31,7 +31,6 @@ let page;
 
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-// WebSocket para input
 const wss = new WebSocket.Server({ server });
 
 wss.on("connection", ws => {
