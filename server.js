@@ -1,66 +1,168 @@
 const express = require("express");
-const fetch = require("node-fetch");
+const { chromium } = require("playwright");
+const WebSocket = require("ws");
+const http = require("http");
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
-// simple homepage with address bar
+let browser;
+let page;
+
+(async () => {
+  browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
+
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 }
+  });
+
+  page = await context.newPage();
+  await page.goto("https://example.com");
+})();
+
 app.get("/", (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="pt-PT">
+  res.send(`
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cloud Browser</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body { background: #f5f5f5; font-family: sans-serif; }
-    .browser { width: 90vw; height: 80vh; border: 1px solid #ccc; }
-    .controls { margin: 20px; }
-  </style>
+<meta charset="UTF-8">
+<title>Cloud Browser</title>
+
+<style>
+body {
+  margin:0;
+  font-family:sans-serif;
+  background:linear-gradient(135deg,#6b73ff,#9b59b6);
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.container{
+  background:white;
+  border-radius:12px;
+  padding:20px;
+  width:90vw;
+  height:85vh;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+input{
+  flex:1;
+  padding:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button{
+  background:#7b4dff;
+  border:none;
+  color:white;
+  padding:10px 20px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+canvas{
+  flex:1;
+  background:black;
+  border-radius:8px;
+}
+</style>
 </head>
+
 <body>
+
+<div class="container">
   <div class="controls">
-    <form onsubmit="goto(event)">
-      <input id="url" type="text" placeholder="https://example.com" size="40" />
-      <button type="submit" class="btn btn-primary">Go</button>
-    </form>
+    <input id="url" placeholder="https://example.com"/>
+    <button onclick="go()">Go</button>
   </div>
-  <iframe id="frame" class="browser"></iframe>
 
-  <script>
-    function goto(e) {
-      e.preventDefault();
-      const u = document.getElementById('url').value;
-      document.getElementById('frame').src = '/proxy/' + encodeURIComponent(u);
-    }
-  </script>
+  <canvas id="screen"></canvas>
+</div>
+
+<script>
+const ws = new WebSocket(
+  (location.protocol === "https:" ? "wss://" : "ws://") + location.host
+);
+
+const canvas = document.getElementById("screen");
+const ctx = canvas.getContext("2d");
+
+ws.onmessage = async (event) => {
+  const blob = new Blob([event.data], { type: "image/jpeg" });
+  const img = await createImageBitmap(blob);
+
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img,0,0);
+};
+
+function go(){
+  const url = document.getElementById("url").value;
+  ws.send(JSON.stringify({ type:"goto", url }));
+}
+
+canvas.addEventListener("click", e=>{
+  ws.send(JSON.stringify({
+    type:"click",
+    x:e.offsetX,
+    y:e.offsetY
+  }));
+});
+</script>
+
 </body>
-</html>`);
+</html>
+`);
 });
 
-// proxy handler: everything after /proxy/<encoded> is forwarded to target
-app.use('/proxy/:target(*)', async (req, res) => {
-  try {
-    const targetBase = decodeURIComponent(req.params.target);
-    const url = new URL(targetBase);
-    // append rest of path
-    url.pathname = req.url.replace(/^\/proxy\/[^/]+/, '');
-    const options = {
-      method: req.method,
-      headers: { ...req.headers, host: url.host },
-      // body not handled (GET only for simplicity)
-    };
-    const response = await fetch(url.toString(), options);
-    // copy status and headers
-    res.status(response.status);
-    response.headers.forEach((v, k) => res.setHeader(k, v));
-    const body = await response.buffer();
-    res.send(body);
-  } catch (err) {
-    res.status(500).send('proxy error: ' + err.message);
-  }
+wss.on("connection", ws => {
+
+  const stream = async () => {
+    while (ws.readyState === 1) {
+      const buffer = await page.screenshot({
+        type: "jpeg",
+        quality: 60
+      });
+      ws.send(buffer);
+      await new Promise(r => setTimeout(r, 120));
+    }
+  };
+
+  stream();
+
+  ws.on("message", async msg => {
+    const data = JSON.parse(msg);
+
+    if (data.type === "goto") {
+      try {
+        await page.goto(data.url);
+      } catch {}
+    }
+
+    if (data.type === "click") {
+      await page.mouse.click(data.x, data.y);
+    }
+  });
 });
 
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log("Cloud browser running on port", PORT);
 });
