@@ -1,57 +1,54 @@
 const express = require("express");
 const { chromium } = require("playwright");
+const WebSocket = require("ws");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(express.static("public"));
 
 let browser;
 let page;
 
 (async () => {
   browser = await chromium.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    headless: false,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--autoplay-policy=no-user-gesture-required",
+      "--use-fake-ui-for-media-stream",
+      "--enable-audio"
+    ]
   });
 
   const context = await browser.newContext({
-    viewport: { width: 1280, height: 800 }
+    viewport: { width: 1280, height: 720 }
   });
 
   page = await context.newPage();
 })();
 
-app.get("/", (req, res) => {
-  res.send(`
-  <body style="margin:0;background:#111;color:white;font-family:sans-serif">
-    <div style="padding:10px;background:#222">
-      <input id="url" placeholder="https://google.com" style="width:70%">
-      <button onclick="go()">Go</button>
-    </div>
-    <img id="view" style="width:100%;height:90vh;object-fit:contain"/>
-    <script>
-      async function go(){
-        const url=document.getElementById('url').value;
-        await fetch('/goto?url='+encodeURIComponent(url));
-      }
-      setInterval(()=>{
-        document.getElementById('view').src='/frame?'+Date.now();
-      },1000);
-    </script>
-  </body>
-  `);
-});
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-app.get("/goto", async (req, res) => {
-  await page.goto(req.query.url, { waitUntil: "domcontentloaded" });
-  res.send("ok");
-});
+// WebSocket para input
+const wss = new WebSocket.Server({ server });
 
-app.get("/frame", async (req, res) => {
-  const img = await page.screenshot();
-  res.set("Content-Type", "image/png");
-  res.send(img);
-});
+wss.on("connection", ws => {
+  console.log("Cliente conectado");
 
-app.listen(PORT, () =>
-  console.log("Cloud browser running on port " + PORT)
-);
+  ws.on("message", async message => {
+    const input = JSON.parse(message.toString());
+    if (!page) return;
+
+    if (input.type === "goto") {
+      await page.goto(input.url, { waitUntil: "domcontentloaded" });
+    }
+    if (input.type === "click") {
+      await page.mouse.click(input.x, input.y);
+    }
+    if (input.type === "keydown") {
+      await page.keyboard.press(input.key);
+    }
+  });
+});

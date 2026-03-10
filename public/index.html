@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cloud Browser</title>
+</head>
+<body style="margin:0">
+  <div style="padding:10px;background:#222;color:white">
+    <input id="url" placeholder="https://twitch.tv" style="width:70%">
+    <button onclick="go()">Go</button>
+  </div>
+  <video id="video" autoplay playsinline style="width:100%;height:90vh"></video>
+
+  <script>
+    const ws = new WebSocket("ws://" + location.host);
+    const video = document.getElementById("video");
+
+    function go() {
+      const url = document.getElementById("url").value;
+      ws.send(JSON.stringify({ type: "goto", url }));
+    }
+
+    document.addEventListener("keydown", e => {
+      ws.send(JSON.stringify({ type: "keydown", key: e.key }));
+    });
+
+    document.addEventListener("click", e => {
+      ws.send(JSON.stringify({ type: "click", x: e.clientX, y: e.clientY }));
+    });
+  </script>
+</body>
+</html>
