@@ -1,61 +1,64 @@
 const express = require("express");
+const fetch = require("node-fetch");
 
 const app = express();
 
-const htmlContent = `<!DOCTYPE html>
+// simple homepage with address bar
+app.get("/", (req, res) => {
+  res.send(`<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cloud Browser - Twitch</title>
+  <title>Cloud Browser</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .container-custom {
-      text-align: center;
-      background: white;
-      border-radius: 15px;
-      padding: 50px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    }
-    h1 {
-      color: #764ba2;
-      margin-bottom: 30px;
-    }
-    .btn-twitch {
-      background-color: #9146FF;
-      border: none;
-      padding: 15px 40px;
-      font-size: 18px;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-    }
-    .btn-twitch:hover {
-      background-color: #772ce8;
-      transform: scale(1.05);
-      color: white;
-    }
+    body { background: #f5f5f5; font-family: sans-serif; }
+    .browser { width: 90vw; height: 80vh; border: 1px solid #ccc; }
+    .controls { margin: 20px; }
   </style>
 </head>
 <body>
-  <div class="container-custom">
-    <h1>🎮 Cloud Browser</h1>
-    <p class="text-muted mb-4">Aceda ao Twitch diretamente</p>
-    <a href="https://twitch.tv" target="_blank" class="btn btn-twitch">Abrir Twitch</a>
+  <div class="controls">
+    <form onsubmit="goto(event)">
+      <input id="url" type="text" placeholder="https://example.com" size="40" />
+      <button type="submit" class="btn btn-primary">Go</button>
+    </form>
   </div>
+  <iframe id="frame" class="browser"></iframe>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function goto(e) {
+      e.preventDefault();
+      const u = document.getElementById('url').value;
+      document.getElementById('frame').src = '/proxy/' + encodeURIComponent(u);
+    }
+  </script>
 </body>
-</html>`;
+</html>`);
+});
 
-app.get("/", (req, res) => {
-  res.send(htmlContent);
+// proxy handler: everything after /proxy/<encoded> is forwarded to target
+app.use('/proxy/:target(*)', async (req, res) => {
+  try {
+    const targetBase = decodeURIComponent(req.params.target);
+    const url = new URL(targetBase);
+    // append rest of path
+    url.pathname = req.url.replace(/^\/proxy\/[^/]+/, '');
+    const options = {
+      method: req.method,
+      headers: { ...req.headers, host: url.host },
+      // body not handled (GET only for simplicity)
+    };
+    const response = await fetch(url.toString(), options);
+    // copy status and headers
+    res.status(response.status);
+    response.headers.forEach((v, k) => res.setHeader(k, v));
+    const body = await response.buffer();
+    res.send(body);
+  } catch (err) {
+    res.status(500).send('proxy error: ' + err.message);
+  }
 });
 
 app.listen(3000, () => {
