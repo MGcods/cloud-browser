@@ -2,10 +2,9 @@
   "name": "cloud-browser",
   "version": "1.0.0",
   "main": "server.js",
-  "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "build": "npx playwright install chromium"
+    "build": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium"
   },
   "dependencies": {
     "express": "^4.19.2",
