@@ -1,16 +1,20 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DISPLAY=:1
 
-# Pacotes necessários
 RUN apt-get update && apt-get install -y \
-    wget curl git sudo \
-    xvfb x11vnc novnc websockify \
-    pulseaudio dbus-x11 \
-    chromium-browser \
+    chromium \
+    xvfb \
+    x11vnc \
+    novnc \
+    websockify \
+    pulseaudio \
+    dbus-x11 \
+    fluxbox \
+    wget curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Pasta app
 WORKDIR /app
 
 COPY start.sh .
