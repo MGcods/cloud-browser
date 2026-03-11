@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     dbus-x11 \
     pulseaudio \
+    pulseaudio-utils \
     xvfb \
     fluxbox \
     x11vnc \
+    x11-utils \
     ffmpeg \
     python3 \
     python3-numpy \
@@ -24,10 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     libxss1 \
     libasound2 \
+    upower \
     && rm -rf /var/lib/apt/lists/*
 
 #################################
-# Install Google Chrome (FIXED)
+# Install Google Chrome
 #################################
 RUN mkdir -p /etc/apt/keyrings \
  && wget -qO- https://dl.google.com/linux/linux_signing_key.pub \
@@ -51,5 +54,6 @@ COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
 EXPOSE 3000
+EXPOSE 8090
 
 CMD ["/start.sh"]
