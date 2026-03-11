@@ -2,34 +2,35 @@
 
 export DISPLAY=:1
 
+# DBus
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
 
+# Xvfb
 echo "Starting virtual display..."
 Xvfb :1 -screen 0 1024x576x24 &
 
-# Esperar X iniciar MESMO
+# Esperar X iniciar
 until xdpyinfo -display :1 >/dev/null 2>&1; do
   echo "Waiting for X display..."
   sleep 1
 done
 
+# Fluxbox
 echo "Starting window manager..."
 fluxbox &
 
-# Esperar Fluxbox iniciar (verifica se X está pronto para janelas)
-until xprop -root >/dev/null 2>&1; do
-  sleep 1
-done
+sleep 2
 
+# PulseAudio
 echo "Starting PulseAudio..."
-pulseaudio --start --exit-idle-time=-1 --daemonize=yes
+pulseaudio --start --exit-idle-time=-1 --daemonize=yes || echo "PulseAudio já em execução"
 
-# Esperar PulseAudio estar pronto
-sleep 1
+sleep 2
 
-echo "Starting VNC (low latency mode)..."
+# x11vnc
+echo "Starting VNC..."
 x11vnc \
   -display :1 \
   -nopw \
@@ -47,9 +48,9 @@ x11vnc \
   -noscr \
   -quiet &
 
-# Esperar VNC estar pronto
-sleep 1
+sleep 2
 
+# Chrome
 echo "Launching Chrome..."
 google-chrome \
   --no-sandbox \
@@ -67,8 +68,8 @@ google-chrome \
   --start-maximized \
   https://google.com &
 
-# Esperar Chrome iniciar
-sleep 1
+sleep 2
 
+# noVNC
 echo "Starting noVNC web client..."
-/usr/share/novnc/utils/websockify/websockify --web=/usr/share/novnc/ 3000 localhost:5900
+/opt/novnc/utils/websockify/run 3000 localhost:5900
