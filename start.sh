@@ -2,9 +2,12 @@
 
 export DISPLAY=:1
 
+echo "Starting DBus..."
+mkdir -p /run/dbus
+dbus-daemon --system --fork
+
 echo "Starting virtual display..."
 
-# Display virtual otimizado
 Xvfb :1 -screen 0 1024x576x24 &
 
 # Esperar X iniciar MESMO
@@ -16,10 +19,10 @@ done
 echo "Starting window manager..."
 fluxbox &
 
-sleep 3
+sleep 2
 
 echo "Starting PulseAudio..."
-pulseaudio --start
+pulseaudio --start --exit-idle-time=-1 --daemonize=yes
 
 sleep 2
 
@@ -48,15 +51,19 @@ echo "Launching Chrome..."
 
 google-chrome \
   --no-sandbox \
-  --disable-gpu \
+  --disable-setuid-sandbox \
   --disable-dev-shm-usage \
+  --disable-gpu \
   --disable-background-timer-throttling \
   --disable-renderer-backgrounding \
   --disable-backgrounding-occluded-windows \
+  --no-first-run \
+  --no-default-browser-check \
   --autoplay-policy=no-user-gesture-required \
   --enable-low-end-device-mode \
+  --user-data-dir=/tmp/chrome \
   --start-maximized \
-  https://twitch.tv &
+  https://google.com &
 
 sleep 2
 
