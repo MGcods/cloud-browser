@@ -1,31 +1,35 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV DISPLAY=:1
 
-# Dependências base + X utils necessários
 RUN apt-get update && apt-get install -y \
-    wget curl gnupg ca-certificates \
-    xvfb x11vnc novnc websockify \
-    pulseaudio dbus-x11 fluxbox \
-    x11-utils xdg-utils \
-    fonts-liberation \
-    libasound2 libatk-bridge2.0-0 libatk1.0-0 libcups2 \
-    libdbus-1-3 libgbm1 libgtk-3-0 libnspr4 libnss3 \
-    libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 \
+    xvfb x11vnc fluxbox \
+    dbus dbus-x11 pulseaudio \
+    wget curl ca-certificates \
+    fonts-liberation fonts-dejavu fonts-noto \
+    xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar Google Chrome (versão .deb — funciona em Docker)
+# instalar chrome
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt-get update \
-    && apt install -y ./google-chrome-stable_current_amd64.deb \
-    && rm google-chrome-stable_current_amd64.deb
+ && apt-get update \
+ && apt-get install -y ./google-chrome-stable_current_amd64.deb \
+ && rm google-chrome-stable_current_amd64.deb
 
-WORKDIR /app
+# noVNC
+RUN git clone https://github.com/novnc/noVNC.git /usr/share/novnc \
+ && git clone https://github.com/novnc/websockify /usr/share/novnc/utils/websockify
 
-COPY start.sh .
-RUN chmod +x start.sh
+RUN useradd -m clouduser
+USER clouduser
+WORKDIR /home/clouduser
+
+ENV DISPLAY=:1
+ENV LIBGL_ALWAYS_SOFTWARE=1
+
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
 EXPOSE 3000
 
-CMD ["bash", "start.sh"]
+CMD ["/start.sh"]
