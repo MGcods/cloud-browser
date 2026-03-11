@@ -3,46 +3,39 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:1
 
-# Atualização básica e instalação de pacotes
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb \
     fluxbox \
     x11vnc \
+    pulseaudio \
+    dbus-x11 \
+    ffmpeg \
+    python3 \
     wget \
     curl \
-    unzip \
-    pulseaudio \
-    dbus \
-    sudo \
     ca-certificates \
-    gnupg \
-    lsb-release \
-    python3 \
-    python3-pip \
-    net-tools \
-    wget \
-    vim \
     fonts-liberation \
     libnss3 \
     libxss1 \
     libasound2 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalação do Chrome
+# Chrome
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
- && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' \
- && apt-get update && apt-get install -y google-chrome-stable \
+ && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+    > /etc/apt/sources.list.d/google.list \
+ && apt-get update \
+ && apt-get install -y google-chrome-stable \
  && rm -rf /var/lib/apt/lists/*
 
-# Instala noVNC
-RUN mkdir -p /opt/novnc && \
-    wget -qO- https://github.com/novnc/noVNC/archive/refs/heads/master.tar.gz | tar xz --strip-components=1 -C /opt/novnc && \
-    chmod +x /opt/novnc/utils/websockify/run
+# noVNC
+RUN git clone https://github.com/novnc/noVNC.git /opt/novnc \
+ && git clone https://github.com/novnc/websockify /opt/novnc/utils/websockify
 
-# Copiar start.sh e dar permissão
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-EXPOSE 5900 3000
+EXPOSE 3000
 
 CMD ["/start.sh"]
