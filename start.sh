@@ -7,7 +7,6 @@ mkdir -p /run/dbus
 dbus-daemon --system --fork
 
 echo "Starting virtual display..."
-
 Xvfb :1 -screen 0 1024x576x24 &
 
 # Esperar X iniciar MESMO
@@ -19,15 +18,18 @@ done
 echo "Starting window manager..."
 fluxbox &
 
-sleep 2
+# Esperar Fluxbox iniciar (verifica se X está pronto para janelas)
+until xprop -root >/dev/null 2>&1; do
+  sleep 1
+done
 
 echo "Starting PulseAudio..."
 pulseaudio --start --exit-idle-time=-1 --daemonize=yes
 
-sleep 2
+# Esperar PulseAudio estar pronto
+sleep 1
 
 echo "Starting VNC (low latency mode)..."
-
 x11vnc \
   -display :1 \
   -nopw \
@@ -45,10 +47,10 @@ x11vnc \
   -noscr \
   -quiet &
 
-sleep 2
+# Esperar VNC estar pronto
+sleep 1
 
 echo "Launching Chrome..."
-
 google-chrome \
   --no-sandbox \
   --disable-setuid-sandbox \
@@ -65,8 +67,8 @@ google-chrome \
   --start-maximized \
   https://google.com &
 
-sleep 2
+# Esperar Chrome iniciar
+sleep 1
 
 echo "Starting noVNC web client..."
-
-websockify --web=/usr/share/novnc/ 3000 localhost:5900
+/usr/share/novnc/utils/websockify/websockify --web=/usr/share/novnc/ 3000 localhost:5900
