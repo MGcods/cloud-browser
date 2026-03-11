@@ -23,21 +23,24 @@ done
 ###################################
 fluxbox >/dev/null 2>&1 &
 
-sleep 2
+# garantir WM pronto
+sleep 4
 
 ###################################
-# PulseAudio (AUDIO FIX)
+# PulseAudio (Container Safe Mode)
 ###################################
 echo "Starting PulseAudio..."
 
-pulseaudio --start \
-  --exit-idle-time=-1 \
+pulseaudio \
+  --system \
   --daemonize=yes \
-  --disable-shm=true
+  --disallow-exit \
+  --exit-idle-time=-1 \
+  --no-cpu-limit \
+  --log-target=stderr
 
-pactl load-module module-null-sink sink_name=chrome_sink
-pactl set-default-sink chrome_sink
-pactl set-default-source chrome_sink.monitor
+# esperar audio ficar pronto
+sleep 2
 
 ###################################
 # VNC ULTRA SMOOTH
@@ -51,7 +54,7 @@ x11vnc \
   -shared \
   -rfbport 5900 \
   -noxdamage \
-  -wait 10 \
+  -wait 20 \
   -threads \
   -xkb \
   -repeat \
