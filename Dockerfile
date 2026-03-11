@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     x11vnc \
     ffmpeg \
     python3 \
+    python3-numpy \
     fonts-liberation \
     libnss3 \
     libxss1 \
