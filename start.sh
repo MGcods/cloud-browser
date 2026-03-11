@@ -2,11 +2,9 @@
 
 echo "Starting virtual display..."
 
-# iniciar display virtual
 Xvfb :1 -screen 0 1280x720x24 &
 export DISPLAY=:1
 
-# esperar X iniciar (IMPORTANTE)
 sleep 5
 
 echo "Starting window manager..."
@@ -19,9 +17,9 @@ pulseaudio --start
 
 sleep 2
 
-echo "Launching Chromium..."
+echo "Launching Chrome..."
 
-chromium \
+google-chrome \
   --no-sandbox \
   --disable-gpu \
   --disable-dev-shm-usage \
