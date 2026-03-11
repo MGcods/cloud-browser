@@ -34,22 +34,21 @@ sleep 3
 echo "Starting x11vnc..."
 
 x11vnc \
-  -display :1 \
-  -nopw \
-  -forever \
-  -shared \
-  -rfbport 5900 \
-  -noxdamage \
-  -wait 20 \
-  -threads \
-  -xkb \
-  -repeat \
-  -bg \
-  -rfbwait 50 \
-  -speeds lan \
-  -encodings tight copyrect hextile \
-  -quality 6 \
-  -compresslevel 5
+ -display :1 \
+ -nopw \
+ -forever \
+ -shared \
+ -rfbport 5900 \
+ -noxdamage \
+ -wait 20 \
+ -threads \
+ -xkb \
+ -repeat \
+ -rfbwait 50 \
+ -speeds lan \
+ -encodings tight copyrect hextile \
+ -quality 6 \
+ -compresslevel 5 &
 
 sleep 2
 
