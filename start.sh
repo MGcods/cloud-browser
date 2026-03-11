@@ -9,25 +9,27 @@ dbus-uuidgen > /etc/machine-id
 export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
 
 ###################################
-# Virtual Display (mais fluido)
+# Virtual Display
 ###################################
 echo "Starting Xvfb..."
-Xvfb :1 -screen 0 960x540x24 -nolisten tcp &
+
+Xvfb :1 -screen 0 1280x720x24 -nolisten tcp &
 
 until xdpyinfo -display :1 >/dev/null 2>&1; do
   sleep 1
 done
 
 ###################################
-# Window manager (sem terminal)
+# Window manager
 ###################################
+echo "Starting Fluxbox..."
+
 fluxbox >/dev/null 2>&1 &
 
-# garantir WM pronto
-sleep 4
+sleep 3
 
 ###################################
-# PulseAudio (Container Safe Mode)
+# PulseAudio
 ###################################
 echo "Starting PulseAudio..."
 
@@ -39,11 +41,19 @@ pulseaudio \
   --no-cpu-limit \
   --log-target=stderr
 
-# esperar audio ficar pronto
 sleep 2
 
 ###################################
-# VNC ULTRA SMOOTH
+# Create virtual audio sink
+###################################
+echo "Creating audio sink..."
+
+pactl load-module module-null-sink sink_name=chrome_sink sink_properties=device.description=chrome_sink
+
+sleep 2
+
+###################################
+# VNC
 ###################################
 echo "Starting x11vnc..."
 
@@ -59,7 +69,6 @@ x11vnc \
   -xkb \
   -repeat \
   -bg \
-  -o /tmp/x11vnc.log \
   -rfbwait 50 \
   -speeds lan \
   -encodings tight copyrect hextile \
@@ -69,7 +78,7 @@ x11vnc \
 sleep 2
 
 ###################################
-# CHROME (modo cloud otimizado)
+# Launch Chrome
 ###################################
 echo "Launching Chrome..."
 
@@ -77,32 +86,25 @@ google-chrome \
   --no-sandbox \
   --disable-setuid-sandbox \
   --disable-dev-shm-usage \
+  --disable-oom-score-adjustment \
   --disable-gpu \
-  --disable-gpu-compositing \
   --disable-software-rasterizer \
-  --disable-features=UseSkiaRenderer \
-  --disable-background-timer-throttling \
-  --disable-renderer-backgrounding \
-  --disable-backgrounding-occluded-windows \
-  --disable-smooth-scrolling \
-  --disable-animations \
+  --disable-extensions \
+  --disable-features=VizDisplayCompositor \
+  --renderer-process-limit=2 \
   --no-first-run \
   --no-default-browser-check \
-  --renderer-process-limit=2 \
   --autoplay-policy=no-user-gesture-required \
   --user-data-dir=/tmp/chrome \
   --start-maximized \
-  --homepage=https://www.google.com \
   https://www.google.com &
 
-sleep 3
+sleep 5
 
 ###################################
-# AUDIO STREAM
+# AUDIO STREAM SERVER
 ###################################
 echo "Starting audio stream..."
-
-python3 -m http.server 8090 >/dev/null 2>&1 &
 
 ffmpeg \
  -f pulse \
@@ -110,8 +112,8 @@ ffmpeg \
  -ac 2 \
  -ar 44100 \
  -f mp3 \
- -content_type audio/mpeg \
- http://localhost:8090/audio.mp3 \
+ -listen 1 \
+ http://0.0.0.0:8090/audio.mp3 \
  >/dev/null 2>&1 &
 
 ###################################
