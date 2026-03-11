@@ -29,30 +29,6 @@ fluxbox >/dev/null 2>&1 &
 sleep 3
 
 ###################################
-# PulseAudio
-###################################
-echo "Starting PulseAudio..."
-
-pulseaudio \
-  --system \
-  --daemonize=yes \
-  --disallow-exit \
-  --exit-idle-time=-1 \
-  --no-cpu-limit \
-  --log-target=stderr
-
-sleep 2
-
-###################################
-# Create virtual audio sink
-###################################
-echo "Creating audio sink..."
-
-pactl load-module module-null-sink sink_name=chrome_sink sink_properties=device.description=chrome_sink
-
-sleep 2
-
-###################################
 # VNC
 ###################################
 echo "Starting x11vnc..."
@@ -86,35 +62,17 @@ google-chrome \
   --no-sandbox \
   --disable-setuid-sandbox \
   --disable-dev-shm-usage \
-  --disable-oom-score-adjustment \
   --disable-gpu \
   --disable-software-rasterizer \
   --disable-extensions \
-  --disable-features=VizDisplayCompositor \
   --renderer-process-limit=2 \
   --no-first-run \
   --no-default-browser-check \
-  --autoplay-policy=no-user-gesture-required \
   --user-data-dir=/tmp/chrome \
   --start-maximized \
   https://www.google.com &
 
 sleep 5
-
-###################################
-# AUDIO STREAM SERVER
-###################################
-echo "Starting audio stream..."
-
-ffmpeg \
- -f pulse \
- -i chrome_sink.monitor \
- -ac 2 \
- -ar 44100 \
- -f mp3 \
- -listen 1 \
- http://0.0.0.0:8090/audio.mp3 \
- >/dev/null 2>&1 &
 
 ###################################
 # noVNC

@@ -13,15 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
     dbus-x11 \
-    pulseaudio \
-    pulseaudio-utils \
     xvfb \
     fluxbox \
     x11vnc \
     x11-utils \
-    ffmpeg \
     python3 \
-    python3-numpy \
     fonts-liberation \
     libnss3 \
     libxss1 \
@@ -54,6 +50,5 @@ COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
 EXPOSE 3000
-EXPOSE 8090
 
 CMD ["/start.sh"]
