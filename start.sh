@@ -5,6 +5,8 @@ export DISPLAY=:1
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
+dbus-uuidgen > /etc/machine-id
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
 
 ###################################
 # Virtual Display (mais fluido)
@@ -116,4 +118,5 @@ echo "Starting noVNC..."
 
 /opt/novnc/utils/novnc_proxy \
  --vnc localhost:5900 \
- --listen 3000
+ --listen 3000 \
+ --web /opt/novnc
