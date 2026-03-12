@@ -7,16 +7,15 @@ mkdir -p /run/dbus
 dbus-daemon --system --fork
 
 #################################
-# Create VNC password automatically
+# Create VNC password
 #################################
 mkdir -p ~/.vnc
 
-echo "Setting VNC password..."
 echo "cloud" | vncpasswd -f > ~/.vnc/passwd
 chmod 600 ~/.vnc/passwd
 
 #################################
-# VNC session startup
+# VNC desktop startup
 #################################
 cat <<EOF > ~/.vnc/xstartup
 #!/bin/bash
@@ -24,30 +23,33 @@ cat <<EOF > ~/.vnc/xstartup
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 
-export XDG_RUNTIME_DIR=/tmp/runtime-root
-mkdir -p \$XDG_RUNTIME_DIR
+export DISPLAY=:1
 
-# start window manager (IMPORTANT: keep foreground)
-exec fluxbox
-EOF
+echo "Starting window manager..."
+fluxbox &
 
-sleep 5
+sleep 3
 
 echo "Launching Chrome..."
-
-DISPLAY=:1 google-chrome \
+google-chrome \
   --no-sandbox \
   --disable-dev-shm-usage \
   --disable-gpu \
+  --disable-software-rasterizer \
+  --disable-background-timer-throttling \
+  --disable-renderer-backgrounding \
+  --disable-backgrounding-occluded-windows \
   --no-first-run \
   --no-default-browser-check \
   --start-maximized \
   https://www.google.com &
 
+EOF
+
 chmod +x ~/.vnc/xstartup
 
 #################################
-# Start TigerVNC
+# Start TigerVNC FIRST
 #################################
 echo "Starting TigerVNC server..."
 
@@ -56,10 +58,10 @@ vncserver :1 \
   -depth 24 \
   -SecurityTypes VncAuth
 
-sleep 3
+sleep 5
 
 #################################
-# Start noVNC
+# Start noVNC proxy
 #################################
 echo "Starting noVNC proxy..."
 
