@@ -6,39 +6,27 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     git \
-    xvfb \
     fluxbox \
     x11vnc \
-    novnc \
-    websockify \
-    pulseaudio \
-    dbus \
+    xvfb \
     dbus-x11 \
-    x11-utils \
+    pulseaudio \
+    ffmpeg \
+    python3 \
+    python3-pip \
     ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libatspi2.0-0 \
-    libcairo2 \
-    libcups2 \
-    libgbm1 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libpango-1.0-0 \
-    libvulkan1 \
-    libxkbcommon0 \
-    xdg-utils \
-    --no-install-recommends \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
- && apt install -y ./google-chrome-stable_current_amd64.deb \
- && rm google-chrome-stable_current_amd64.deb
+# Chrome
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google.gpg \
+ && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+ > /etc/apt/sources.list.d/google.list \
+ && apt-get update \
+ && apt-get install -y google-chrome-stable \
+ && rm -rf /var/lib/apt/lists/*
 
+# noVNC
 RUN git clone https://github.com/novnc/noVNC.git /opt/novnc \
  && git clone https://github.com/novnc/websockify /opt/novnc/utils/websockify
 
