@@ -3,22 +3,26 @@
 set -e
 
 export DISPLAY=:1
-export PORT=${PORT:-3000}
+export PORT=${PORT:-10000}
 
-echo "Using port: $PORT"
+echo "Render PORT: $PORT"
 
-# DBus
+# Fix machine id (chrome + dbus)
+echo "Fixing machine-id..."
+dbus-uuidgen > /etc/machine-id
+
+# Start DBus
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
 
-# Virtual display
-echo "Starting Xvfb..."
+# Start virtual display
+echo "Starting virtual display..."
 Xvfb :1 -screen 0 1280x720x24 &
 
 # Wait for X
 until xdpyinfo -display :1 >/dev/null 2>&1; do
-  echo "Waiting for X server..."
+  echo "Waiting for X display..."
   sleep 1
 done
 
@@ -28,14 +32,14 @@ fluxbox &
 
 sleep 2
 
-# PulseAudio
+# Audio
 echo "Starting PulseAudio..."
 pulseaudio --start --exit-idle-time=-1 --daemonize=yes || true
 
 sleep 2
 
-# VNC server
-echo "Starting x11vnc..."
+# VNC
+echo "Starting VNC..."
 x11vnc \
   -display :1 \
   -nopw \
@@ -51,7 +55,6 @@ sleep 2
 
 # Chrome
 echo "Launching Chrome..."
-
 google-chrome \
   --no-sandbox \
   --disable-setuid-sandbox \
@@ -63,15 +66,14 @@ google-chrome \
   --disable-background-timer-throttling \
   --disable-renderer-backgrounding \
   --disable-backgrounding-occluded-windows \
-  --autoplay-policy=no-user-gesture-required \
   --user-data-dir=/tmp/chrome \
   --start-maximized \
   https://google.com &
 
 sleep 3
 
-# noVNC proxy
-echo "Starting noVNC..."
+# noVNC
+echo "Starting noVNC on port $PORT..."
 
 /opt/novnc/utils/novnc_proxy \
   --vnc localhost:5900 \
