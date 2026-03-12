@@ -1,84 +1,90 @@
 #!/bin/bash
 
+set -e
+
 export DISPLAY=:1
 
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
-dbus-uuidgen > /etc/machine-id
-export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
 
-###################################
-# Virtual Display
-###################################
 echo "Starting Xvfb..."
 
-Xvfb :1 -screen 0 1280x720x24 -nolisten tcp &
+Xvfb :1 \
+  -screen 0 1280x720x24 \
+  -ac \
+  -nolisten tcp \
+  -dpi 96 &
 
-until xdpyinfo -display :1 >/dev/null 2>&1; do
+# Wait for display
+echo "Waiting for X display..."
+
+until xdpyinfo -display :1 >/dev/null 2>&1
+do
   sleep 1
 done
 
-###################################
-# Window manager
-###################################
+echo "X display ready"
+
 echo "Starting Fluxbox..."
+fluxbox &
 
-fluxbox >/dev/null 2>&1 &
+sleep 2
 
-sleep 3
-
-###################################
-# VNC
-###################################
 echo "Starting x11vnc..."
 
 x11vnc \
  -display :1 \
- -nopw \
- -forever \
- -shared \
- -rfbport 5900 \
- -noxdamage \
- -wait 20 \
- -threads \
- -xkb \
- -repeat \
- -rfbwait 50 \
- -speeds lan \
- -encodings tight copyrect hextile \
- -quality 6 \
- -compresslevel 5 &
+  -forever \
+  -shared \
+  -nopw \
+  -rfbport 5900 \
+  -noxdamage \
+  -repeat \
+  -ncache 10 \
+  -wait 20 \
+  -bg
+
+echo "Checking VNC port..."
 
 sleep 2
+netstat -tulpn | grep 5900 || echo "WARNING: VNC port not detected"
 
-###################################
-# Launch Chrome
-###################################
 echo "Launching Chrome..."
 
 google-chrome \
   --no-sandbox \
-  --disable-setuid-sandbox \
   --disable-dev-shm-usage \
   --disable-gpu \
   --disable-software-rasterizer \
   --disable-extensions \
-  --renderer-process-limit=2 \
+  --disable-background-networking \
+  --disable-sync \
+  --disable-translate \
+  --disable-features=site-per-process \
+  --disable-background-timer-throttling \
+  --disable-renderer-backgrounding \
+  --disable-backgrounding-occluded-windows \
+  --disable-client-side-phishing-detection \
+  --disable-component-update \
+  --disable-default-apps \
+  --disable-domain-reliability \
+  --disable-hang-monitor \
+  --disable-popup-blocking \
+  --disable-prompt-on-repost \
+  --disable-ipc-flooding-protection \
+  --disable-breakpad \
+  --disable-features=TranslateUI \
   --no-first-run \
-  --no-default-browser-check \
-  --user-data-dir=/tmp/chrome \
-  --start-maximized \
-  https://www.google.com &
+  --disable-infobars \
+  --window-size=1280,720 \
+  https://google.com &
 
-sleep 5
+sleep 2
 
-###################################
-# noVNC
-###################################
 echo "Starting noVNC..."
 
 /opt/novnc/utils/novnc_proxy \
- --vnc localhost:5900 \
- --listen 3000 \
- --web /opt/novnc
+  --vnc localhost:5900 \
+  --listen ${PORT:-3000} \
+  --web /opt/novnc
