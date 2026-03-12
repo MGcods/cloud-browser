@@ -75,5 +75,7 @@ google-chrome \
 sleep 2
 
 # noVNC
-echo "Starting noVNC web client..."
-/opt/novnc/utils/websockify/run 3000 localhost:5900
+/opt/novnc/utils/novnc_proxy \
+ --vnc localhost:5900 \
+ --listen 3000 \
+ --web /opt/novnc
