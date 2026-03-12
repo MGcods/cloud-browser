@@ -1,22 +1,21 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV DISPLAY=:1
 
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
-    ca-certificates \
+    git \
     xvfb \
-    x11vnc \
     fluxbox \
+    x11vnc \
+    novnc \
+    websockify \
+    pulseaudio \
+    dbus \
     dbus-x11 \
     x11-utils \
-    net-tools \
-    python3 \
-    python3-pip \
-    git \
-    supervisor \
+    ca-certificates \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -34,21 +33,14 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     xdg-utils \
     --no-install-recommends \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
- && dpkg -i google-chrome-stable_current_amd64.deb || apt-get -fy install \
+ && apt install -y ./google-chrome-stable_current_amd64.deb \
  && rm google-chrome-stable_current_amd64.deb
 
-# Install noVNC
 RUN git clone https://github.com/novnc/noVNC.git /opt/novnc \
  && git clone https://github.com/novnc/websockify /opt/novnc/utils/websockify
-
-# Improve websocket performance
-RUN pip3 install numpy
-
-WORKDIR /app
 
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
