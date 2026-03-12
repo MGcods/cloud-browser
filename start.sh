@@ -24,23 +24,25 @@ cat <<EOF > ~/.vnc/xstartup
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 
-fluxbox &
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+mkdir -p \$XDG_RUNTIME_DIR
 
-sleep 2
+# start window manager (IMPORTANT: keep foreground)
+exec fluxbox
+EOF
 
-google-chrome \
+sleep 5
+
+echo "Launching Chrome..."
+
+DISPLAY=:1 google-chrome \
   --no-sandbox \
   --disable-dev-shm-usage \
   --disable-gpu \
-  --disable-background-timer-throttling \
-  --disable-renderer-backgrounding \
-  --disable-backgrounding-occluded-windows \
   --no-first-run \
   --no-default-browser-check \
   --start-maximized \
   https://www.google.com &
-
-EOF
 
 chmod +x ~/.vnc/xstartup
 
