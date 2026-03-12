@@ -1,90 +1,75 @@
 #!/bin/bash
 
-set -e
-
 export DISPLAY=:1
 
+# DBus
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
 
-echo "Starting Xvfb..."
+# Xvfb
+echo "Starting virtual display..."
+Xvfb :1 -screen 0 1024x576x24 &
 
-Xvfb :1 \
-  -screen 0 1280x720x24 \
-  -ac \
-  -nolisten tcp \
-  -dpi 96 &
-
-# Wait for display
-echo "Waiting for X display..."
-
-until xdpyinfo -display :1 >/dev/null 2>&1
-do
+# Esperar X iniciar
+until xdpyinfo -display :1 >/dev/null 2>&1; do
+  echo "Waiting for X display..."
   sleep 1
 done
 
-echo "X display ready"
-
-echo "Starting Fluxbox..."
+# Fluxbox
+echo "Starting window manager..."
 fluxbox &
 
 sleep 2
 
-echo "Starting x11vnc..."
-
-x11vnc \
- -display :1 \
-  -forever \
-  -shared \
-  -nopw \
-  -rfbport 5900 \
-  -noxdamage \
-  -repeat \
-  -ncache 10 \
-  -wait 20 \
-  -bg
-
-echo "Checking VNC port..."
+# PulseAudio
+echo "Starting PulseAudio..."
+pulseaudio --start --exit-idle-time=-1 --daemonize=yes || echo "PulseAudio já em execução"
 
 sleep 2
-netstat -tulpn | grep 5900 || echo "WARNING: VNC port not detected"
 
+# x11vnc
+echo "Starting VNC..."
+x11vnc \
+  -display :1 \
+  -nopw \
+  -forever \
+  -shared \
+  -rfbport 5900 \
+  -noxdamage \
+  -ncache 10 \
+  -ncache_cr \
+  -wait 5 \
+  -threads \
+  -xkb \
+  -repeat \
+  -nowf \
+  -noscr \
+  -quiet &
+
+sleep 2
+
+# Chrome
 echo "Launching Chrome..."
-
 google-chrome \
   --no-sandbox \
+  --disable-setuid-sandbox \
   --disable-dev-shm-usage \
   --disable-gpu \
-  --disable-software-rasterizer \
-  --disable-extensions \
-  --disable-background-networking \
-  --disable-sync \
-  --disable-translate \
-  --disable-features=site-per-process \
   --disable-background-timer-throttling \
   --disable-renderer-backgrounding \
   --disable-backgrounding-occluded-windows \
-  --disable-client-side-phishing-detection \
-  --disable-component-update \
-  --disable-default-apps \
-  --disable-domain-reliability \
-  --disable-hang-monitor \
-  --disable-popup-blocking \
-  --disable-prompt-on-repost \
-  --disable-ipc-flooding-protection \
-  --disable-breakpad \
-  --disable-features=TranslateUI \
   --no-first-run \
-  --disable-infobars \
-  --window-size=1280,720 \
+  --no-default-browser-check \
+  --autoplay-policy=no-user-gesture-required \
+  --enable-low-end-device-mode \
+  --user-data-dir=/tmp/chrome \
+  --start-maximized \
   https://google.com &
 
 sleep 2
 
-echo "Starting noVNC..."
-
-/opt/novnc/utils/novnc_proxy \
-  --vnc localhost:5900 \
-  --listen ${PORT:-3000} \
-  --web /opt/novnc
+# noVNC
+echo "Starting noVNC web client..."
+/opt/novnc/utils/websockify/run 3000 localhost:5900
