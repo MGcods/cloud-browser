@@ -67,8 +67,9 @@ google-chrome \
 
 sleep 2
 
-echo "Starting noVNC server..."
+echo "Starting noVNC on port $PORT"
+
 /opt/novnc/utils/novnc_proxy \
  --vnc localhost:5900 \
- --listen 3000 \
+ --listen $PORT \
  --web /opt/novnc
