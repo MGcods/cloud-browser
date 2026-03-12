@@ -3,49 +3,35 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:1
 
-#################################
-# Base packages
-#################################
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
+    xvfb \
+    x11vnc \
+    fluxbox \
     wget \
     curl \
-    gnupg \
-    git \
-    ca-certificates \
     dbus-x11 \
-    xvfb \
-    fluxbox \
-    x11vnc \
     x11-utils \
+    net-tools \
     python3 \
-    fonts-liberation \
-    libnss3 \
-    libxss1 \
-    libasound2 \
-    upower \
+    python3-pip \
+    git \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-#################################
-# Install Google Chrome
-#################################
-RUN mkdir -p /etc/apt/keyrings \
- && wget -qO- https://dl.google.com/linux/linux_signing_key.pub \
-    | gpg --dearmor -o /etc/apt/keyrings/google.gpg \
- && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-    > /etc/apt/sources.list.d/google-chrome.list \
- && apt-get update \
- && apt-get install -y google-chrome-stable \
- && rm -rf /var/lib/apt/lists/*
+# Install Chrome
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+ && apt install -y ./google-chrome-stable_current_amd64.deb \
+ && rm google-chrome-stable_current_amd64.deb
 
-#################################
-# noVNC
-#################################
+# Install noVNC
 RUN git clone https://github.com/novnc/noVNC.git /opt/novnc \
  && git clone https://github.com/novnc/websockify /opt/novnc/utils/websockify
 
-#################################
-# Startup
-#################################
+# Improve websocket speed
+RUN pip3 install numpy
+
+WORKDIR /app
+
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
