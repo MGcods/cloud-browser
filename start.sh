@@ -6,12 +6,17 @@ echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
 
-echo "Preparing VNC environment..."
-
+#################################
+# Create VNC password automatically
+#################################
 mkdir -p ~/.vnc
 
+echo "Setting VNC password..."
+echo "cloud" | vncpasswd -f > ~/.vnc/passwd
+chmod 600 ~/.vnc/passwd
+
 #################################
-# VNC startup session
+# VNC session startup
 #################################
 cat <<EOF > ~/.vnc/xstartup
 #!/bin/bash
@@ -39,12 +44,21 @@ EOF
 
 chmod +x ~/.vnc/xstartup
 
+#################################
+# Start TigerVNC
+#################################
 echo "Starting TigerVNC server..."
 
-vncserver :1 -geometry 1280x720 -depth 24
+vncserver :1 \
+  -geometry 1280x720 \
+  -depth 24 \
+  -SecurityTypes VncAuth
 
 sleep 3
 
+#################################
+# Start noVNC
+#################################
 echo "Starting noVNC proxy..."
 
 /opt/novnc/utils/novnc_proxy \
