@@ -1,75 +1,79 @@
 #!/bin/bash
 
-export DISPLAY=:1
+set -e
 
+export DISPLAY=:1
+export PORT=${PORT:-3000}
+
+echo "Using port: $PORT"
+
+# DBus
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
 
-echo "Fixing machine-id..."
-if [ ! -s /etc/machine-id ]; then
-  dbus-uuidgen > /etc/machine-id
-fi
+# Virtual display
+echo "Starting Xvfb..."
+Xvfb :1 -screen 0 1280x720x24 &
 
-echo "Fixing DNS..."
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-
-echo "Starting virtual display..."
-Xvfb :1 -screen 0 1024x576x24 -ac +extension GLX +render -noreset &
-
-echo "Waiting for X display..."
+# Wait for X
 until xdpyinfo -display :1 >/dev/null 2>&1; do
+  echo "Waiting for X server..."
   sleep 1
 done
 
-echo "Starting window manager..."
+# Window manager
+echo "Starting Fluxbox..."
 fluxbox &
 
 sleep 2
 
+# PulseAudio
 echo "Starting PulseAudio..."
-pulseaudio --start --exit-idle-time=-1 --daemonize=yes 2>/dev/null || true
+pulseaudio --start --exit-idle-time=-1 --daemonize=yes || true
 
 sleep 2
 
-echo "Starting VNC..."
+# VNC server
+echo "Starting x11vnc..."
 x11vnc \
- -display :1 \
- -forever \
- -shared \
- -rfbport 5900 \
- -nopw \
- -noxdamage \
- -repeat \
- -xkb \
- -quiet &
+  -display :1 \
+  -nopw \
+  -forever \
+  -shared \
+  -rfbport 5900 \
+  -noxdamage \
+  -repeat \
+  -xkb \
+  -quiet &
 
 sleep 2
 
+# Chrome
 echo "Launching Chrome..."
+
 google-chrome \
- --no-sandbox \
- --disable-dev-shm-usage \
- --disable-gpu \
- --disable-software-rasterizer \
- --disable-features=VizDisplayCompositor \
- --disable-background-networking \
- --disable-background-timer-throttling \
- --disable-renderer-backgrounding \
- --disable-backgrounding-occluded-windows \
- --no-first-run \
- --no-default-browser-check \
- --autoplay-policy=no-user-gesture-required \
- --window-size=1024,576 \
- --user-data-dir=/tmp/chrome \
- https://google.com &
+  --no-sandbox \
+  --disable-setuid-sandbox \
+  --disable-dev-shm-usage \
+  --disable-gpu \
+  --disable-software-rasterizer \
+  --no-first-run \
+  --no-default-browser-check \
+  --disable-background-timer-throttling \
+  --disable-renderer-backgrounding \
+  --disable-backgrounding-occluded-windows \
+  --autoplay-policy=no-user-gesture-required \
+  --user-data-dir=/tmp/chrome \
+  --start-maximized \
+  https://google.com &
 
-sleep 2
+sleep 3
 
-echo "Starting noVNC on port $PORT"
+# noVNC proxy
+echo "Starting noVNC..."
 
 /opt/novnc/utils/novnc_proxy \
- --vnc localhost:5900 \
- --listen $PORT \
- --web /opt/novnc
+  --vnc localhost:5900 \
+  --listen $PORT \
+  --web /opt/novnc
