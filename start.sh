@@ -1,80 +1,73 @@
 #!/bin/bash
 
 export DISPLAY=:1
-export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
 
-# fix machine-id
-dbus-uuidgen > /etc/machine-id
-
-# DBus
 echo "Starting DBus..."
 mkdir -p /run/dbus
 dbus-daemon --system --fork
 
-# Xvfb
-echo "Starting virtual display..."
-Xvfb :1 -screen 0 1024x576x24 &
+echo "Fixing machine-id..."
+if [ ! -s /etc/machine-id ]; then
+  dbus-uuidgen > /etc/machine-id
+fi
 
-# Esperar X iniciar
+echo "Fixing DNS..."
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+
+echo "Starting virtual display..."
+Xvfb :1 -screen 0 1024x576x24 -ac +extension GLX +render -noreset &
+
+echo "Waiting for X display..."
 until xdpyinfo -display :1 >/dev/null 2>&1; do
-  echo "Waiting for X display..."
   sleep 1
 done
 
-# Fluxbox
 echo "Starting window manager..."
 fluxbox &
 
 sleep 2
 
-# PulseAudio
 echo "Starting PulseAudio..."
-pulseaudio --start --exit-idle-time=-1 --daemonize=yes || echo "PulseAudio já em execução"
+pulseaudio --start --exit-idle-time=-1 --daemonize=yes 2>/dev/null || true
 
 sleep 2
 
-# x11vnc
 echo "Starting VNC..."
 x11vnc \
-  -display :1 \
-  -nopw \
-  -forever \
-  -shared \
-  -rfbport 5900 \
-  -noxdamage \
-  -ncache 10 \
-  -ncache_cr \
-  -wait 5 \
-  -threads \
-  -xkb \
-  -repeat \
-  -nowf \
-  -noscr \
-  -quiet &
+ -display :1 \
+ -forever \
+ -shared \
+ -rfbport 5900 \
+ -nopw \
+ -noxdamage \
+ -repeat \
+ -xkb \
+ -quiet &
 
 sleep 2
 
-# Chrome
 echo "Launching Chrome..."
 google-chrome \
-  --no-sandbox \
-  --disable-setuid-sandbox \
-  --disable-dev-shm-usage \
-  --disable-gpu \
-  --disable-background-timer-throttling \
-  --disable-renderer-backgrounding \
-  --disable-backgrounding-occluded-windows \
-  --no-first-run \
-  --no-default-browser-check \
-  --autoplay-policy=no-user-gesture-required \
-  --enable-low-end-device-mode \
-  --user-data-dir=/tmp/chrome \
-  --start-maximized \
-  https://google.com &
+ --no-sandbox \
+ --disable-dev-shm-usage \
+ --disable-gpu \
+ --disable-software-rasterizer \
+ --disable-features=VizDisplayCompositor \
+ --disable-background-networking \
+ --disable-background-timer-throttling \
+ --disable-renderer-backgrounding \
+ --disable-backgrounding-occluded-windows \
+ --no-first-run \
+ --no-default-browser-check \
+ --autoplay-policy=no-user-gesture-required \
+ --window-size=1024,576 \
+ --user-data-dir=/tmp/chrome \
+ https://google.com &
 
 sleep 2
 
-# noVNC
+echo "Starting noVNC server..."
 /opt/novnc/utils/novnc_proxy \
  --vnc localhost:5900 \
  --listen 3000 \
