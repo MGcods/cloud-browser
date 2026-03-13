@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
     python3-pip \
+    git \
     ca-certificates \
     fonts-liberation \
     curl \
@@ -23,9 +24,9 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-libav \
     && rm -rf /var/lib/apt/lists/*
 
-# instalar selkies (compatível com Debian 12)
-RUN pip3 install --upgrade pip --break-system-packages \
-    && pip3 install --break-system-packages selkies-gstreamer
+# instalar Selkies WebRTC streamer
+RUN pip3 install --break-system-packages \
+    git+https://github.com/selkies-project/selkies-gstreamer.git
 
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
