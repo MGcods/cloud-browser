@@ -1,68 +1,32 @@
 #!/bin/bash
 
-export DISPLAY=:1
+export DISPLAY=:99
 
-#################################
-# FIX XAUTH (IMPORTANT)
-#################################
-touch ~/.Xauthority
-xauth generate :1 . trusted
+echo "Starting Xvfb..."
+Xvfb :99 -screen 0 1280x720x24 &
 
-echo "Starting DBus..."
-mkdir -p /run/dbus
-dbus-daemon --system --fork
+sleep 2
 
-#################################
-# VNC password
-#################################
-mkdir -p ~/.vnc
-echo "cloud" | vncpasswd -f > ~/.vnc/passwd
-chmod 600 ~/.vnc/passwd
+echo "Starting PulseAudio..."
+pulseaudio --start
 
-#################################
-# Desktop startup
-#################################
-cat <<EOF > ~/.vnc/xstartup
-#!/bin/bash
+echo "Launching Chromium..."
 
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-
-export DISPLAY=:1
-
-fluxbox &
-
-sleep 3
-
-google-chrome \
+chromium-browser \
   --no-sandbox \
-  --disable-dev-shm-usage \
+  --disable-background-networking \
+  --disable-sync \
+  --disable-extensions \
+  --disable-default-apps \
   --disable-gpu \
-  --no-first-run \
-  --no-default-browser-check \
-  --start-maximized \
+  --window-size=1280,720 \
   https://www.google.com &
-EOF
 
-chmod +x ~/.vnc/xstartup
+sleep 2
 
-#################################
-# Start VNC
-#################################
-echo "Starting TigerVNC server..."
+echo "Starting WebRTC streamer..."
 
-vncserver :1 \
-  -geometry 1280x720 \
-  -depth 24 \
-  -SecurityTypes VncAuth
-
-sleep 5
-
-#################################
-# Start noVNC
-#################################
-echo "Starting noVNC proxy..."
-
-/opt/novnc/utils/novnc_proxy \
-  --vnc localhost:5901 \
-  --listen 3000
+selkies \
+  --display :99 \
+  --port 3000 \
+  --audio
