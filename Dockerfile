@@ -10,9 +10,20 @@ RUN apt-get update && apt-get install -y \
     dbus-x11 \
     x11-xserver-utils \
     ffmpeg \
+    git \
     python3 \
     python3-pip \
-    git \
+    python3-dev \
+    build-essential \
+    pkg-config \
+    cython3 \
+    libavcodec-dev \
+    libavformat-dev \
+    libavdevice-dev \
+    libavutil-dev \
+    libavfilter-dev \
+    libswscale-dev \
+    libswresample-dev \
     ca-certificates \
     fonts-liberation \
     curl \
@@ -24,7 +35,9 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-libav \
     && rm -rf /var/lib/apt/lists/*
 
-# instalar Selkies WebRTC streamer
+# instalar selkies
+RUN pip3 install --upgrade pip --break-system-packages
+
 RUN pip3 install --break-system-packages \
     git+https://github.com/selkies-project/selkies-gstreamer.git
 
