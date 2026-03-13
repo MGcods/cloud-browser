@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     pkg-config \
     cython3 \
+    libxkbcommon-dev \
     libavcodec-dev \
     libavformat-dev \
     libavdevice-dev \
@@ -35,7 +36,6 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-libav \
     && rm -rf /var/lib/apt/lists/*
 
-# instalar selkies
 RUN pip3 install --upgrade pip --break-system-packages
 
 RUN pip3 install --break-system-packages \
