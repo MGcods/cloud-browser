@@ -1,32 +1,25 @@
-FROM ubuntu:22.04
+FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg \
-    ca-certificates \
-    pulseaudio \
+    chromium \
     xvfb \
+    pulseaudio \
     dbus-x11 \
     x11-xserver-utils \
     ffmpeg \
     python3 \
     python3-pip \
-    supervisor \
+    ca-certificates \
+    fonts-liberation \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# instalar chromium via debian repo
-RUN echo "deb http://deb.debian.org/debian bullseye main" >> /etc/apt/sources.list
-
-RUN apt-get update && apt-get install -y chromium
-
-# instalar selkies
+# instalar WebRTC streamer
 RUN pip3 install selkies-gstreamer
 
 COPY start.sh /start.sh
-
 RUN chmod +x /start.sh
 
 EXPOSE 3000

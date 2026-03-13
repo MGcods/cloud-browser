@@ -2,13 +2,13 @@
 
 export DISPLAY=:99
 
-echo "Starting Xvfb..."
+echo "Starting virtual display..."
 Xvfb :99 -screen 0 1280x720x24 &
 
 sleep 2
 
 echo "Starting PulseAudio..."
-pulseaudio --start --exit-idle-time=-1
+pulseaudio --start --exit-idle-time=-1 --system=false
 
 sleep 2
 
@@ -18,6 +18,7 @@ chromium \
   --no-sandbox \
   --disable-gpu \
   --disable-dev-shm-usage \
+  --autoplay-policy=no-user-gesture-required \
   --window-size=1280,720 \
   https://www.google.com &
 
