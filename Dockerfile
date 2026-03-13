@@ -3,25 +3,29 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    wget \
     curl \
-    git \
-    supervisor \
-    xvfb \
+    wget \
+    gnupg \
+    ca-certificates \
     pulseaudio \
+    xvfb \
     dbus-x11 \
     x11-xserver-utils \
     ffmpeg \
     python3 \
     python3-pip \
-    chromium-browser \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# instalar Selkies WebRTC
-RUN pip install selkies
+# instalar chromium via debian repo
+RUN echo "deb http://deb.debian.org/debian bullseye main" >> /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y chromium
+
+# instalar selkies
+RUN pip3 install selkies-gstreamer
 
 COPY start.sh /start.sh
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN chmod +x /start.sh
 
