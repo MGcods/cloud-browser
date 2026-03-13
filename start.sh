@@ -8,25 +8,24 @@ Xvfb :99 -screen 0 1280x720x24 &
 sleep 2
 
 echo "Starting PulseAudio..."
-pulseaudio --start
-
-echo "Launching Chromium..."
-
-chromium-browser \
-  --no-sandbox \
-  --disable-background-networking \
-  --disable-sync \
-  --disable-extensions \
-  --disable-default-apps \
-  --disable-gpu \
-  --window-size=1280,720 \
-  https://www.google.com &
+pulseaudio --start --exit-idle-time=-1
 
 sleep 2
 
-echo "Starting WebRTC streamer..."
+echo "Launching Chromium..."
 
-selkies \
+chromium \
+  --no-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --window-size=1280,720 \
+  https://www.google.com &
+
+sleep 3
+
+echo "Starting WebRTC stream..."
+
+selkies-gstreamer \
   --display :99 \
   --port 3000 \
-  --audio
+  --enable-audio
