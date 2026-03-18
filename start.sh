@@ -9,12 +9,11 @@ Xvfb :99 -screen 0 1280x720x24 &
 sleep 2
 
 echo "Starting PulseAudio..."
-pulseaudio --start --exit-idle-time=-1 --system=false
+pulseaudio --start --exit-idle-time=-1
 
 sleep 2
 
 echo "Launching Chromium..."
-
 chromium \
   --no-sandbox \
   --disable-gpu \
