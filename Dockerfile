@@ -36,8 +36,13 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-libav \
     && rm -rf /var/lib/apt/lists/*
 
+# atualizar pip
 RUN pip3 install --upgrade pip --break-system-packages
 
+# instalar versão compatível do PyAV
+RUN pip3 install --break-system-packages av==10.0.0
+
+# instalar selkies
 RUN pip3 install --break-system-packages \
     git+https://github.com/selkies-project/selkies-gstreamer.git
 
